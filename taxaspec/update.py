@@ -40,11 +40,11 @@ def from_mine(db_name):
                 names[m_id].update(data[0])
                 inchikeys[m_id].add(data[1])
     with open('model_names.pkl', 'wb') as outfile:
-        pickle.dump(names, outfile)
+        pickle.dump(dict(names), outfile)
     with open('model_inchikeys.pkl', 'wb') as outfile:
-        pickle.dump(inchikeys, outfile)
+        pickle.dump(dict(inchikeys), outfile)
 
 
 if __name__ == "__main__":
-    from_MINE(sys.argv[1])
+    from_mine(sys.argv[1])
     print("Taxonomy updated")
