@@ -1,3 +1,66 @@
 """
 Methods for filtering mass spectra based on taxonomy
 """
+import pickle
+import difflib
+import re
+import sys
+
+
+def get_model(model_id):
+    """
+    Return sets of Inchikeys and names associated with the model id
+    :param model_id: the name of the metabolic model
+    :type model_id: str
+    :return:
+    :rtype: tuple(set, set)
+    """
+    def get_set(file):
+        with open(file, 'rb') as infile:
+            set_dict = pickle.load(infile)
+        try:
+            return set_dict[model_id]
+        except KeyError:
+            options = difflib.get_close_matches(model_id, set_dict.keys())
+            raise ValueError('%s does not match any valid models. Did you '
+                             'mean any of these: %s'
+                             % (model_id, ", ".join(options)))
+
+    return get_set('model_inchikeys.pkl'), get_set('model_names.pkl')
+
+
+def filter_file(infile, model):
+    def spec_gen(file):
+        # This should probably be converted to a generator to be resilient
+        # against really big spec libraries
+        raw = open(file, 'r').read()
+        sep_list = ["\n\n\n", "END IONS\n\nBEGIN IONS\n"]
+        if not raw:
+            raise ValueError("%s is not a valid input file" % file)
+        sep = max(sep_list, key=lambda x: raw.count(x, 0, 200))
+        for spec in raw.split(sep):
+            yield spec+sep
+
+    m_inchikeys, m_names = get_model(model)
+    outname = "%s_filtered_by_%s.%s" % (infile.split(".")[-2], model,
+                                        infile.split(".")[-1])
+    outfile = open(outname, "w")
+    in_spec, out_spec = 0, 0
+    for spec in spec_gen(infile):
+        in_spec += 1
+        inchikey = re.search("[A-Z]{14}-[A-Z]{10}-[A-Z]", spec)
+        if inchikey:
+            inchikey = inchikey.group(0)
+        name = re.search("(Name: )(\S+)", spec)
+        if name:
+            name = name.group(2)
+        if name in m_names or inchikey in m_inchikeys:
+            out_spec += 1
+            outfile.write(spec)
+    outfile.close()
+    return in_spec, out_spec
+
+if __name__ == "__main__":
+    inspec, outspec = filter_file(sys.argv[1], sys.argv[2])
+    print("Filtered %s spectra down to %s based on the %s model"
+          % (inspec, outspec, sys.argv[2]))
