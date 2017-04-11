@@ -35,11 +35,15 @@ def filter_file(infile, model):
         # against really big spec libraries
         raw = open(file, 'r').read()
         sep_list = ["\n\n\n", "END IONS\n\nBEGIN IONS\n"]
-        if not raw:
-            raise ValueError("%s is not a valid input file" % file)
         sep = max(sep_list, key=lambda x: raw.count(x, 0, 200))
         for spec in raw.split(sep):
             yield spec+sep
+
+    if '.msp' not in infile and '.mgf' not in infile:
+        raise ValueError("%s is not a valid input file. Use MSP or MGF "
+                         "formats" % infile)
+    # Trigger file not found error quickly if applicable
+    open(infile)
 
     m_inchikeys, m_names = get_model(model)
     outname = "%s_filtered_by_%s.%s" % (infile.split(".")[-2], model,
