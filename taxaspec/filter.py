@@ -5,6 +5,7 @@ import pickle
 import difflib
 import re
 import sys
+import gzip
 
 
 def get_model(model_id):
@@ -16,7 +17,7 @@ def get_model(model_id):
     :rtype: tuple(set, set)
     """
     def get_set(file):
-        with open(file, 'rb') as infile:
+        with gzip.GzipFile(file, 'rb') as infile:
             set_dict = pickle.load(infile)
         try:
             return set_dict[model_id]
@@ -26,7 +27,7 @@ def get_model(model_id):
                              'mean any of these: %s'
                              % (model_id, ", ".join(options)))
 
-    return get_set('model_inchikeys.pkl'), get_set('model_names.pkl')
+    return get_set('model_inchikeys.pkl.gz'), get_set('model_names.pkl.gz')
 
 
 def filter_file(infile, model):

@@ -3,6 +3,7 @@ Methods for updating taxonomic models
 """
 import pymongo
 import pickle
+import gzip
 import sys
 from collections import defaultdict
 
@@ -39,9 +40,9 @@ def from_mine(db_name):
             if data:
                 names[m_id].update(data[0])
                 inchikeys[m_id].add(data[1])
-    with open('model_names.pkl', 'wb') as outfile:
+    with gzip.GzipFile('model_names.pkl.gz', 'wb') as outfile:
         pickle.dump(dict(names), outfile)
-    with open('model_inchikeys.pkl', 'wb') as outfile:
+    with gzip.GzipFile('model_inchikeys.pkl.gz', 'wb') as outfile:
         pickle.dump(dict(inchikeys), outfile)
 
 
