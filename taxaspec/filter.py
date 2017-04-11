@@ -46,8 +46,8 @@ def filter_file(infile, model):
         # This should probably be converted to a generator to be resilient
         # against really big spec libraries
         raw = open(file, 'r').read()
-        sep_list = ["\n\n\n", "END IONS\n\nBEGIN IONS\n"]
-        sep = max(sep_list, key=lambda x: raw.count(x, 0, 200))
+        sep_list = ["\n\n\n", "\n\n", "END IONS\n\nBEGIN IONS\n"]
+        sep = max(sep_list, key=lambda x: raw.count(x, 0, 10000))
         for spec in raw.split(sep):
             yield spec+sep
 
