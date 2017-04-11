@@ -31,6 +31,17 @@ def get_model(model_id):
 
 
 def filter_file(infile, model):
+    """
+    Filters a mass spectra library to only compounds that exist in a
+    specific organism's metabolic model
+    :param infile: The path to the file to be filtered
+    :type infile: str
+    :param model: The id of a model to use for filtering (e.g. 'eco')
+    :type model: str
+    :return: The number of input spectra in the file and number of spectra
+    remaining after filtering
+    :rtype: tuple(int, int)
+    """
     def spec_gen(file):
         # This should probably be converted to a generator to be resilient
         # against really big spec libraries
