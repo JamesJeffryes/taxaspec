@@ -8,5 +8,8 @@ setup(name='taxaspec',
       author='James Jeffryes',
       author_email='jamesgjeffryes@gmail.com',
       license='MIT',
+      install_requires=[
+          "requests",
+          ],
       extras_require={'update':  ["pymongo"]},
       )
