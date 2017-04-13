@@ -6,13 +6,9 @@ from subprocess import call
 
 query = 'compound.metaData=q=\'name=="molecular formula" and ' \
             'value=="C47H74O12S"\''
-expected_name = "mona_compound.metaData=q='name=="\
-                    + '"molecular formula" and value=="C47H74O12S"' + "'.msp"
+
+
 def test_from_mona():
-    query = 'compound.metaData=q=\'name=="molecular formula" and ' \
-            'value=="C47H74O12S"\''
-    expected_name = "mona_compound.metaData=q='name=="\
-                    + '"molecular formula" and value=="C47H74O12S"' + "'.msp"
     try:
         file_name = acquire.from_mona(query)
         filecmp.cmp(file_name, "tests/mona_results.msp")
@@ -34,9 +30,10 @@ def test_mona_commandline():
 
 
 def test_from_mine():
-    one = acquire.from_mine("EcoCycexp2", "", "eco", False,
-                            [[True, 20], [False, 40]])
-    assert len(one)
-    two = acquire.from_mine('EcoCycexp2', "{'Formula': {'$regex': '^C6H'}}",
-                            "", True, [])
-    assert len(two)
+    try:
+        file_name = acquire.from_mine("EcoCycexp2", "", "eco", False,
+                                      [[True, 20], [False, 40]])
+        filecmp.cmp(file_name, "tests/mine_results.msp")
+    finally:
+        for file in glob.glob('*.msp'):
+            os.remove(file)

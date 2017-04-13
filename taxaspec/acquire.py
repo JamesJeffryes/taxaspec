@@ -69,7 +69,10 @@ def from_mine(db, mongo_query, parent_filter, putative, spec_type):
     if 'result' not in resp:
         raise ServerError('Unknown', 0,
                           'An unknown server error occurred')
-    return resp['result'][0]
+    filename = "mine_%s.msp" % datetime.datetime.now()
+    with open(filename, "w") as outfile:
+        outfile.write(resp['result'][0])
+    return filename
 
 
 if __name__ == "__main__":

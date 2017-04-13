@@ -1,6 +1,7 @@
 """
 Methods for filtering mass spectra based on taxonomy
 """
+# TODO: Should just use directory search to find models to speed filter time
 import pickle
 import difflib
 import re
