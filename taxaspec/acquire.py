@@ -4,6 +4,9 @@ Methods for acquiring mass spectra from public libraries
 import requests
 from taxaspec import filter
 import sys
+import json as _json
+import random
+import datetime
 
 
 def from_mona(query):
@@ -21,10 +24,53 @@ def from_mona(query):
     if not r.status_code == 200:
         raise RuntimeError("Mona query failed with status code %s"
                            % r.status_code)
-    filename = "mona_%s.msp" % query
+    filename = "mona_%s.msp" % datetime.datetime.now()
     with open(filename, "w") as outfile:
         outfile.write(r.text)
     return filename
+
+
+class ServerError(Exception):
+
+    def __init__(self, name, code, message, data=None, error=None):
+        self.name = name
+        self.code = code
+        self.message = '' if message is None else message
+        self.data = data or error or ''
+        # data = JSON RPC 2.0, error = 1.1
+
+    def __str__(self):
+        return self.name + ': ' + str(self.code) + '. ' + self.message + \
+            '\n' + self.data
+
+
+def from_mine(db, mongo_query, parent_filter, putative, spec_type):
+    url = 'http://bio-data-1.mcs.anl.gov/services/mine-database'
+    arg_hash = {'method': 'mineDatabaseServices.spectra_download',
+                'params': [db, mongo_query, parent_filter, putative, spec_type],
+                'version': '1.1',
+                'id': str(random.random())[2:]
+                }
+    _CT = 'content-type'
+    _AJ = 'application/json'
+    ret = requests.post(url, data=_json.dumps(arg_hash))
+    if ret.status_code == requests.codes.server_error:
+        if _CT in ret.headers and ret.headers[_CT] == _AJ:
+            err = _json.loads(ret.text)
+            if 'error' in err:
+                raise ServerError(**err['error'])
+            else:
+                raise ServerError('Unknown', 0, ret.text)
+        else:
+            raise ServerError('Unknown', 0, ret.text)
+    if ret.status_code != requests.codes.OK:
+        ret.raise_for_status()
+    resp = _json.loads(ret.text)
+    if 'result' not in resp:
+        raise ServerError('Unknown', 0,
+                          'An unknown server error occurred')
+    return resp['result'][0]
+
 
 if __name__ == "__main__":
     if sys.argv[1] == 'mona':

@@ -58,8 +58,7 @@ def filter_file(infile, model):
     open(infile)
 
     m_inchikeys, m_names = get_model(model)
-    outname = "%s_filtered_by_%s.%s" % (infile.split(".")[-2], model,
-                                        infile.split(".")[-1])
+    outname = "%s_filtered_by_%s.%s" % (infile[:-4], model, infile[-3:])
     outfile = open(outname, "w")
     in_spec, out_spec = 0, 0
     for spec in spec_gen(infile):
