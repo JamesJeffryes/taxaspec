@@ -67,10 +67,9 @@ def filter_file(infile, model):
         inchikey = re.search("[A-Z]{14}-[A-Z]{10}-[A-Z]", spec)
         if inchikey:
             inchikey = inchikey.group(0)
-        name = re.search("(Name: )(\S+)", spec)
-        if name:
-            name = name.group(2)
-        if name in m_names or inchikey in m_inchikeys:
+        n_patt = "(Synon: METB N: |Name: |Synonym:)(\S+)"
+        names = set([x[1] for x in re.findall(n_patt, spec) if x])
+        if names & m_names or inchikey in m_inchikeys:
             out_spec += 1
             outfile.write(spec)
     outfile.close()
