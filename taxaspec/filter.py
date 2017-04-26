@@ -69,6 +69,10 @@ def filter_file(infile, model):
             inchikey = inchikey.group(0)
         n_patt = "(Synon: METB N: |Name: |Synonym:)(\S+)"
         names = set([x[1] for x in re.findall(n_patt, spec) if x])
+        ri = re.search('"retention index=(\w+)"', spec)
+        if ri:
+            spec = spec.replace("\nFormula:", "\nRI: %s\nFormula:" %
+                                ri.group(1))
         if names & m_names or inchikey in m_inchikeys:
             out_spec += 1
             outfile.write(spec)
