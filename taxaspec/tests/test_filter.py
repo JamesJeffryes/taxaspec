@@ -16,7 +16,7 @@ def test_missing_model():
     filter.get_model("bacillus")
 
 
-def test_filter_file():
+def test_filter_msp_file():
     try:
         spec_in, spec_out = filter.filter_file('tests/test.msp', 'eco')
         assert spec_in == 76
@@ -24,6 +24,16 @@ def test_filter_file():
         assert os.path.exists("tests/test_filtered_by_eco.msp")
     finally:
         os.remove("tests/test_filtered_by_eco.msp")
+
+
+def test_msl_file():
+    try:
+        spec_in, spec_out = filter.filter_file('tests/test.msl', 'eco')
+        assert spec_in == 3
+        assert spec_out == 1
+        assert os.path.exists("tests/test_filtered_by_eco.msl")
+    finally:
+        os.remove("tests/test_filtered_by_eco.msl")
 
 
 @raises(ValueError)

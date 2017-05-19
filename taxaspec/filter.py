@@ -8,6 +8,8 @@ import re
 import sys
 import gzip
 
+quant_blacklist = {'73', '147', '148', '149'}
+
 
 def get_model(model_id):
     """
@@ -31,7 +33,7 @@ def get_model(model_id):
     return get_set('model_inchikeys.pkl.gz'), get_set('model_names.pkl.gz')
 
 
-def filter_file(infile, model):
+def filter_file(infile, model, quanification=False):
     """
     Filters a mass spectra library to only compounds that exist in a
     specific organism's metabolic model
@@ -52,8 +54,8 @@ def filter_file(infile, model):
         for spec in raw.split(sep):
             yield spec+sep
 
-    if '.msp' not in infile and '.mgf' not in infile:
-        raise ValueError("%s is not a valid input file. Use MSP or MGF "
+    if infile[-4:] not in {'.msp', '.mgf', '.msl'}:
+        raise ValueError("%s is not a valid input file. Use MSP, MGF or MSL "
                          "formats" % infile)
     # Trigger file not found error quickly if applicable
     open(infile)
@@ -73,6 +75,15 @@ def filter_file(infile, model):
         if ri:
             spec = spec.replace("\nFormula:", "\nRI: %s\nFormula:" %
                                 ri.group(1))
+
+        # Currently only works with MSL format
+        if '\nQUANTIFICATION:' in spec:
+            ion_list = sorted([(int(x[1]), x[0]) for x in
+                               re.findall("\(\s*(\d+)\s+(\d+)\)", spec)
+                               if x[0] not in quant_blacklist], reverse=True)
+            # Expects qualification line to exist, may need to be refactored
+            spec = spec.replace("\nQUANTIFICATION:\n", "\nQUANTIFICATION: %s\n"
+                                % " ".join([x[1] for x in ion_list[:2]]))
         if names & m_names or inchikey in m_inchikeys:
             out_spec += 1
             outfile.write(spec)
@@ -80,6 +91,6 @@ def filter_file(infile, model):
     return in_spec, out_spec
 
 if __name__ == "__main__":
-    inspec, outspec = filter_file(sys.argv[1], sys.argv[2])
+    inspec, outspec = filter_file(sys.argv[1], sys.argv[2], True)
     print("Filtered %s spectra down to %s based on the %s model"
           % (inspec, outspec, sys.argv[2]))
