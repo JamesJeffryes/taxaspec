@@ -8,8 +8,6 @@ import re
 import sys
 import gzip
 
-quant_blacklist = {'73', '147', '148', '149'}
-
 
 def get_model(model_id):
     """
@@ -31,6 +29,29 @@ def get_model(model_id):
                              % (model_id, ", ".join(options)))
 
     return get_set('model_inchikeys.pkl.gz'), get_set('model_names.pkl.gz')
+
+
+def select_quant_ions(spec, n_ions=3, min_sep=2, graylist_penalty=500,
+                      blacklist={'73', '147', '148', '149', '207'},
+                      graylist=set(list(range(100)) + [221, 281, 295, 355, 429])):
+    # Return a list of ions that are not on the blacklist sorted by intensity
+    ion_list = []
+    for x in re.findall("\(\s*(\d+)\s+(\d+)\)", spec):
+        # skip all blacklisted ions
+        if x[0] in blacklist:
+            continue
+        # subtract the graylist penalty from any ion in the graylist
+        ion_list.append((int(x[1])-int(int(x[0]) in graylist)*graylist_penalty,
+                         int(x[0])))
+    ion_list.sort(reverse=True)
+    quant_ions = set()
+    while len(quant_ions) < n_ions and ion_list:
+        ion = ion_list.pop(0)
+        # If the candidate ion is at least min_sep from any existing quant ion,
+        # add it to the quant ion list
+        if not any([abs(x - ion[1]) <= min_sep for x in quant_ions]):
+            quant_ions.add(ion[1])
+    return quant_ions
 
 
 def filter_file(infile, model, quanification=False):
@@ -78,13 +99,11 @@ def filter_file(infile, model, quanification=False):
 
         # Currently only works with MSL format
         if '\nQUANTIFICATION:' in spec:
-            ion_list = sorted([(int(x[1]), x[0]) for x in
-                               re.findall("\(\s*(\d+)\s+(\d+)\)", spec)
-                               if x[0] not in quant_blacklist], reverse=True)
+            ion_list = select_quant_ions(spec)
             # Expects qualification line to exist, may need to be refactored
             spec = spec.replace("\nQUANTIFICATION:\n", "\nQUANTIFICATION: %s\n"
-                                % " ".join([x[1] for x in ion_list[:2]]))
-        if names & m_names or inchikey in m_inchikeys:
+                                % " ".join([str(x) for x in ion_list]))
+        if True or names & m_names or inchikey in m_inchikeys:
             out_spec += 1
             outfile.write(spec)
     outfile.close()
