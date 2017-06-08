@@ -9,12 +9,14 @@ import random
 import datetime
 
 
-def from_mona(query):
+def from_mona(query, save_path='./'):
     """
     Pull mass spectra stored in the MoNA(http://mona.fiehnlab.ucdavis.edu)
-    database in MSP format
+        database in MSP format
     :param query: A valid RSQL query string. It can be helpful to test the
-    query on the mona website to ensure proper formatting
+        query on the mona website to ensure proper formatting
+    :type query: str
+    :param save_path: The desired location to save the downloaded file
     :type query: str
     :return: The path to the generated MSP file
     :rtype: str
@@ -25,9 +27,9 @@ def from_mona(query):
         raise RuntimeError("Mona query failed with status code %s"
                            % r.status_code)
     filename = "mona_%s.msp" % datetime.datetime.now()
-    with open(filename, "w") as outfile:
+    with open(save_path + filename, "w") as outfile:
         outfile.write(r.text)
-    return filename
+    return save_path + filename
 
 
 class ServerError(Exception):

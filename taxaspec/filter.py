@@ -54,14 +54,20 @@ def select_quant_ions(spec, n_ions=3, min_sep=2, graylist_penalty=500,
     return quant_ions
 
 
-def filter_file(infile, model, quanification=False):
+def filter_file(infile, model=None, inchikeys=None, names=None):
     """
     Filters a mass spectra library to only compounds that exist in a
     specific organism's metabolic model
     :param infile: The path to the file to be filtered
     :type infile: str
-    :param model: The id of a model to use for filtering (e.g. 'eco')
+    :param model: The id of a model to use for filtering (e.g. 'eco'). This
+        will override inchikeys and names parameters
     :type model: str
+    :param inchikeys: If a spectrum matches any of these inchikeys it will be 
+        retained
+    :type inchikeys: set
+    :param names: If a spectrum matches any of these names it will be retained
+    :type names: set
     :return: The number of input spectra in the file and number of spectra
     remaining after filtering
     :rtype: tuple(int, int)
@@ -75,13 +81,17 @@ def filter_file(infile, model, quanification=False):
         for spec in raw.split(sep):
             yield spec+sep
 
+    if not any((model, inchikeys, names)):
+        raise ValueError("No filtering criteria supplied")
+
     if infile[-4:] not in {'.msp', '.mgf', '.msl'}:
         raise ValueError("%s is not a valid input file. Use MSP, MGF or MSL "
                          "formats" % infile)
     # Trigger file not found error quickly if applicable
     open(infile)
 
-    m_inchikeys, m_names = get_model(model)
+    if model:
+        inchikeys, names = get_model(model)
     outname = "%s_filtered_by_%s.%s" % (infile[:-4], model, infile[-3:])
     outfile = open(outname, "w")
     in_spec, out_spec = 0, 0
@@ -91,7 +101,7 @@ def filter_file(infile, model, quanification=False):
         if inchikey:
             inchikey = inchikey.group(0)
         n_patt = "(Synon: METB N: |Name: |Synonym:)(\S+)"
-        names = set([x[1] for x in re.findall(n_patt, spec) if x])
+        spec_names = set([x[1] for x in re.findall(n_patt, spec) if x])
         ri = re.search('"retention index=(\w+)"', spec)
         if ri:
             spec = spec.replace("\nFormula:", "\nRI: %s\nFormula:" %
@@ -103,13 +113,13 @@ def filter_file(infile, model, quanification=False):
             # Expects qualification line to exist, may need to be refactored
             spec = spec.replace("\nQUANTIFICATION:\n", "\nQUANTIFICATION: %s\n"
                                 % " ".join([str(x) for x in ion_list]))
-        if True or names & m_names or inchikey in m_inchikeys:
+        if spec_names & names or inchikey in inchikeys:
             out_spec += 1
             outfile.write(spec)
     outfile.close()
-    return in_spec, out_spec
+    return in_spec, out_spec, outname
 
 if __name__ == "__main__":
-    inspec, outspec = filter_file(sys.argv[1], sys.argv[2], True)
+    inspec, outspec, outfile = filter_file(sys.argv[1], sys.argv[2])
     print("Filtered %s spectra down to %s based on the %s model"
           % (inspec, outspec, sys.argv[2]))
